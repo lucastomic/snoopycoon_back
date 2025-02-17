@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  backend:
+    image: 255537051466.dkr.ecr.eu-west-3.amazonaws.com/snoopycoon/back
+    ports:
+      - "8080:8080"
+    depends_on:
+        mysql:
+          condition: service_healthy
+    environment:
+      - RDS_HOSTNAME=mysql
+      - RDS_PORT=3306
+      - RDS_DB_NAME=snoopycoondev
+      - RDS_USERNAME=root
+      - RDS_PASSWORD=secret
+    volumes:
+      - .:/go/src/app
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: snoopycoondev
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql-data:
