@@ -1,0 +1,161 @@
+/* Estilos generales del Dashboard */
+.dashboard-page {
+    display: flex;
+    flex-direction: row;
+    height: 100vh;
+    background-color: #f8f9fa;
+    padding: 20px;
+}
+
+/* Sidebar izquierdo donde están las búsquedas */
+.sidebar {
+    width: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Lista de búsquedas en la parte izquierda */
+.historial-busquedas {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+/* Estilos de cada búsqueda */
+.busqueda-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.boton-historial {
+    flex: 1;
+    text-align: left;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #e8f5e9;
+    color: #333;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.boton-historial:hover {
+    background-color: #c8e6c9;
+}
+
+/* Botón "Abrir Búsqueda" en la parte inferior izquierda */
+.boton-crear {
+    margin-top: auto;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    color: #ffffff;
+    background-color: #4caf50;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.boton-crear:hover {
+    background-color: #388e3c;
+}
+
+/* Contenedor principal del Dashboard */
+.dashboard-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+}
+
+/* Contenedor de la parte superior (título y botones) */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Botones de "Editar" y "Eliminar" en la parte superior derecha */
+.boton-editar, .boton-eliminar {
+    padding: 10px 15px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.boton-editar {
+    background-color: #007bff;
+    color: white;
+}
+
+.boton-editar:hover {
+    background-color: #0056b3;
+}
+
+.boton-eliminar {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+.boton-eliminar:hover {
+    background-color: #cc0000;
+}
+/* Estilos para resaltar la búsqueda seleccionada */
+.busqueda-item.seleccionada {
+    background-color: #d1e7d3;
+    border-left: 4px solid #4caf50;
+  }
+ 
+  /* Contenedor grande para mostrar detalles */
+.detalle-busqueda {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    height: 300px;
+    position: relative;
+  }
+  
+  /* Botones de "Editar" y "Eliminar" en la parte superior derecha del contenedor */
+  .botones-acciones {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+  }
+  
+  /* Espacio reservado para estadísticas futuras */
+  .estadisticas {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    text-align: center;
+  }
+  

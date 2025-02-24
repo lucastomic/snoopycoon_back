@@ -1,0 +1,15 @@
+{
+  "name": "puppeteer_vinted",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "getcookie": "node getVintedCookie.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^24.2.1"
+  }
+}
