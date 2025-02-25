@@ -8,20 +8,28 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/lucastomic/snoopycoon_back/database"
 	"github.com/lucastomic/snoopycoon_back/domain"
+	"github.com/lucastomic/snoopycoon_back/scraper"
 	"github.com/lucastomic/snoopycoon_back/usecases"
 )
 
 func updateTopic(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Actualizando topic...")
-	id := r.PathValue("id")
+	fmt.Println("🔄 Actualizando topic...")
+
+	// Obtener ID desde la URL
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		http.Error(w, `{"error":"ID inválido"}`, http.StatusBadRequest)
+		return
+	}
+
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		errJSON := map[string]string{"error": err.Error()}
-		s, _ := json.Marshal(errJSON)
-		http.Error(w, string(s), http.StatusInternalServerError)
+		http.Error(w, `{"error":"ID inválido"}`, http.StatusBadRequest)
 		return
 	}
 
@@ -33,36 +41,40 @@ func updateTopic(w http.ResponseWriter, r *http.Request) {
 
 	err = usecases.UpdateTopic(uint(idInt), topic)
 	if err != nil {
-		errJSON := map[string]string{"error": err.Error()}
-		s, _ := json.Marshal(errJSON)
-		http.Error(w, string(s), http.StatusInternalServerError)
+		http.Error(w, `{"error":"Error al actualizar topic"}`, http.StatusInternalServerError)
 		return
 	}
 
+	fmt.Println("✅ Topic actualizado:", idInt)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(topic)
 }
+
 func deleteTopic(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Borrando topic...")
-	id := r.PathValue("id")
-	fmt.Println("Borrando listener con ID " + id)
+	fmt.Println("🗑️ Recibiendo solicitud DELETE en /api/listeners/{id}")
+
+	// Obtener ID desde la URL
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok {
+		http.Error(w, `{"error":"ID inválido"}`, http.StatusBadRequest)
+		return
+	}
+
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		errJSON := map[string]string{"error": err.Error()}
-		s, _ := json.Marshal(errJSON)
-		http.Error(w, string(s), http.StatusInternalServerError)
+		http.Error(w, `{"error":"ID inválido"}`, http.StatusBadRequest)
 		return
 	}
+
 	err = usecases.DeleteTopic(uint(idInt))
 	if err != nil {
-		fmt.Println("Error al borrar listener: " + err.Error())
-		errJSON := map[string]string{"error": err.Error()}
-		s, _ := json.Marshal(errJSON)
-		http.Error(w, string(s), http.StatusInternalServerError)
+		http.Error(w, `{"error":"Error al borrar topic"}`, http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusNoContent)
 
+	fmt.Println("✅ Eliminado correctamente:", idInt)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func createTopic(w http.ResponseWriter, r *http.Request) {
@@ -71,13 +83,10 @@ func createTopic(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("Creando topic...")
-	fmt.Println(topic)
+
 	err := usecases.CreateTopic(&topic)
 	if err != nil {
-		errJSON := map[string]string{"error": err.Error()}
-		s, _ := json.Marshal(errJSON)
-		http.Error(w, string(s), http.StatusInternalServerError)
+		http.Error(w, `{"error":"Error al crear topic"}`, http.StatusInternalServerError)
 		return
 	}
 
@@ -86,19 +95,15 @@ func createTopic(w http.ResponseWriter, r *http.Request) {
 }
 
 func getListeners(w http.ResponseWriter, _ *http.Request) {
-	fmt.Println("Obteniendo listeners...")
 	listeners, err := usecases.GetTopics()
 	if err != nil {
-		errJSON := map[string]string{"error": err.Error()}
-		s, _ := json.Marshal(errJSON)
-		http.Error(w, string(s), http.StatusInternalServerError)
+		http.Error(w, `{"error":"Error al obtener listeners"}`, http.StatusInternalServerError)
 		return
 	}
 	json.NewEncoder(w).Encode(listeners)
 }
 
 func createUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Creando usuario...")
 	var reqBody struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -111,19 +116,16 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 	jwt, err := usecases.CreateUser(domain.User{Email: reqBody.Email, Password: reqBody.Password})
 	if err != nil {
-		errJSON := map[string]string{"error": err.Error()}
-		s, _ := json.Marshal(errJSON)
-
-		http.Error(w, string(s), http.StatusInternalServerError)
+		http.Error(w, `{"error":"Error al crear usuario"}`, http.StatusInternalServerError)
 		return
 	}
+
 	setAuthCookie(&w, jwt, 30)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"token": jwt})
 }
 
 func signIn(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Iniciando sesion...")
 	var reqBody struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -134,23 +136,53 @@ func signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Ha iniciado sesiòn %s\n", reqBody.Email)
 	jwt, err := usecases.SignIn(reqBody.Email, reqBody.Password)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, `{"error":"Error en autenticación"}`, http.StatusUnauthorized)
 		return
 	}
-	fmt.Println("Authenticación exitosa")
+
 	setAuthCookie(&w, jwt, 30)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"token": jwt})
 }
 
-func setAuthCookie(
-	w *http.ResponseWriter,
-	token string,
-	authCookieExpirationInDays int,
-) http.ResponseWriter {
+func scrapeHandler(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("query")
+	if query == "" {
+		http.Error(w, `{"error":"Se requiere un término de búsqueda"}`, http.StatusBadRequest)
+		return
+	}
+
+	// 1) Llamar a Wallapop
+	wallapopItems, wallapopAvg, errWallapop := scraper.ScrapeWallapop(query)
+	// 2) Llamar a Vinted
+	vintedItems, vintedAvg, errVinted := scraper.ScrapeVintedAPI(query)
+
+	// Si una falla, devuelves error
+	if errWallapop != nil || errVinted != nil {
+		http.Error(w, `{"error":"Error al scrapear uno de los marketplaces"}`, http.StatusInternalServerError)
+		return
+	}
+
+	// Construyes una respuesta con datos de ambos
+	response := map[string]interface{}{
+		"query": query,
+		"wallapop": map[string]interface{}{
+			"total_items":   wallapopItems,
+			"average_price": wallapopAvg,
+		},
+		"vinted": map[string]interface{}{
+			"total_items":   vintedItems,
+			"average_price": vintedAvg,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func setAuthCookie(w *http.ResponseWriter, token string, authCookieExpirationInDays int) {
 	expirationTime := time.Now().Add(time.Duration(authCookieExpirationInDays) * 24 * time.Hour)
 	http.SetCookie(*w, &http.Cookie{
 		Name:     "authToken",
@@ -161,23 +193,15 @@ func setAuthCookie(
 		Path:     "/",
 		SameSite: http.SameSiteNoneMode,
 	})
-	return *w
 }
+
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Allow requests from localhost:3000
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-
-		// If you need to send cookies or other credentials, set the following as well
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-		// Allow specific methods
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-
-		// Allow specific headers
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-		// Handle preflight OPTIONS requests
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -191,27 +215,33 @@ func main() {
 	if err := godotenv.Load(".env"); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
+
 	db, err := database.GetGormDB()
 	if err != nil {
 		panic(err)
 	}
 	database.DB = db
-	database.DB.AutoMigrate(
-		&domain.User{},
-		&domain.Topic{},
-	)
+	database.DB.AutoMigrate(&domain.User{}, &domain.Topic{})
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/auth/signup", createUser)
-	mux.HandleFunc("POST /api/auth/signin", signIn)
-	mux.HandleFunc("GET /api/listeners", getListeners)
-	mux.HandleFunc("POST /api/listeners", createTopic)
-	mux.HandleFunc("DELETE /api/listeners/{id}", deleteTopic)
-	mux.HandleFunc("PUT /api/listeners/{id}", updateTopic)
+	// ✅ Configurar rutas correctamente con `mux.NewRouter()`
+	r := mux.NewRouter()
 
-	// Apply CORS middleware to all routes
-	handler := corsMiddleware(mux)
+	// 🔐 Rutas de autenticación
+	r.HandleFunc("/api/auth/signup", createUser).Methods("POST")
+	r.HandleFunc("/api/auth/signin", signIn).Methods("POST")
 
-	fmt.Println("Levantando el servidor para Brunito en http://localhost:8080")
-	http.ListenAndServe(":8080", handler)
+	// 📄 Rutas de búsqueda
+	r.HandleFunc("/api/listeners", getListeners).Methods("GET")
+	r.HandleFunc("/api/listeners", createTopic).Methods("POST")
+	r.HandleFunc("/api/listeners/{id}", deleteTopic).Methods("DELETE")
+	r.HandleFunc("/api/listeners/{id}", updateTopic).Methods("PUT")
+
+	// 🛒 Ruta de scraping
+	r.HandleFunc("/api/scrape", scrapeHandler).Methods("GET")
+
+	// 🌍 Aplica CORS a todas las rutas
+	handler := corsMiddleware(r)
+
+	fmt.Println("✅ Servidor corriendo en http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", handler))
 }

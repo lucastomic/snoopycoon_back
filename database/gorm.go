@@ -16,6 +16,7 @@ func GetGormDB() (*gorm.DB, error) {
 	username := os.Getenv("RDS_USERNAME")
 	password := os.Getenv("RDS_PASSWORD")
 	dbname := os.Getenv("RDS_DB_NAME")
+
 	dsn := username + ":" + password + "@tcp(" + hostname + ":" + port + ")/" + dbname + "?charset=utf8mb4&parseTime=True&loc=UTC"
 	return gorm.Open(mysql.Open(dsn), &gorm.Config{
 		NowFunc: func() time.Time {
